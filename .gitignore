@@ -1,0 +1,19 @@
+# --- NODEJS (backend) ---
+backend/node_modules/
+backend/.env
+backend/.DS_Store
+backend/*.log
+
+# --- FLUTTER ---
+flutter/.dart_tool/
+flutter/build/
+flutter/ios/
+flutter/.idea/
+flutter/.vscode/
+flutter/.packages
+flutter/pubspec.lock
+
+# --- GENERAL ---
+.DS_Store
+*.log
+*.tmp
