@@ -18,15 +18,17 @@ Kullanıcılar yatırım varlıklarını (örneğin altın, hisse senedi, kripto
 
 ## 📸 Ekran Görüntüleri
 
-| #   | Görsel                           | Açıklama                     |
-| --- | -------------------------------- | ---------------------------- |
-| 1   | ![Ekran 1](flutter/assets/1.png) | Ana Dashboard ekranı         |
-| 2   | ![Ekran 2](flutter/assets/2.png) | Portföy dağılım grafiği      |
-| 3   | ![Ekran 3](flutter/assets/3.png) | Yeni varlık ekleme ekranı    |
-| 4   | ![Ekran 4](flutter/assets/4.png) | Liste görünümü (kart yapısı) |
-| 5   | ![Ekran 5](flutter/assets/5.png) | Toplam değer ve özet kartlar |
+<p align="center">
+  <img src="flutter/assets/2.0/1.png" alt="Ekran 1" width="300"/>
+  <img src="flutter/assets/2.0/2.png" alt="Ekran 2" width="300"/>
+  <img src="flutter/assets/2.0/3.png" alt="Ekran 3" width="300"/>
+</p>
 
----
+<p align="center">
+  <img src="flutter/assets/2.0/4.png" alt="Ekran 4" width="300"/>
+  <img src="flutter/assets/2.0/5.png" alt="Ekran 5" width="300"/>
+</p>
+
 
 ## 🧩 Özellikler
 
