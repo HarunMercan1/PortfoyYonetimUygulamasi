@@ -46,23 +46,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Portföy Dashboard'), centerTitle: true),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final added = await showModalBottomSheet<bool>(
-            context: context,
-            isScrollControlled: true,
-            useSafeArea: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            builder: (_) => const AddAssetSheet(),
-          );
-          if (added == true) _fetchAssets();
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Yeni Varlık'),
-      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

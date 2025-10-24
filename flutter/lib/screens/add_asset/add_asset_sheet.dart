@@ -1,3 +1,4 @@
+// add_asset_sheet.dart
 import 'package:flutter/material.dart';
 import '../../data/api/api_service.dart';
 import '../../models/asset_model.dart';
@@ -10,79 +11,92 @@ class AddAssetSheet extends StatefulWidget {
 }
 
 class _AddAssetSheetState extends State<AddAssetSheet> {
-  final formKey = GlobalKey<FormState>();
-  final nameCtrl = TextEditingController();
-  final valueCtrl = TextEditingController();
-  final types = const ['Emtia', 'Hisse', 'Kripto'];
-  String? selectedType;
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController nameCtrl = TextEditingController();
+  final TextEditingController valueCtrl = TextEditingController();
+  String? type;
+
+  Future<void> _addAsset() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      final newAsset = AssetModel(
+        id: 0,
+        name: nameCtrl.text,
+        type: type!,
+        value: double.parse(valueCtrl.text),
+      );
+
+      await ApiService.addAsset(newAsset);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Varlık başarıyla eklendi ✅')),
+      );
+
+      nameCtrl.clear();
+      valueCtrl.clear();
+      setState(() => type = null);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ekleme hatası: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, bottom + 16),
-      child: Form(
-        key: formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(height: 4, width: 40, margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(2)),
-            ),
-            Text('Yeni Varlık Ekle', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Varlık Adı'),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Ad gir' : null,
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: selectedType,
-              items: types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-              decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Tür'),
-              onChanged: (v) => selectedType = v,
-              validator: (v) => v == null ? 'Tür seç' : null,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: valueCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Değer'),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Değer gir';
-                final d = double.tryParse(v.replaceAll(',', '.'));
-                if (d == null) return 'Geçerli sayı gir';
-                if (d < 0) return 'Negatif olamaz';
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                icon: const Icon(Icons.save),
-                label: const Text('Kaydet'),
-                onPressed: () async {
-                  if (!formKey.currentState!.validate()) return;
-                  final val = double.parse(valueCtrl.text.replaceAll(',', '.'));
-                  try {
-                    final created = await ApiService.addAsset(
-                      AssetModel(id: 0, name: nameCtrl.text.trim(), type: selectedType!, value: val),
-                    );
-                    if (context.mounted) {
-                      Navigator.pop(context, true); // home_screen refresh etsin
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${created.name} eklendi')));
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
-                    }
-                  }
-                },
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Yeni Varlık Ekle'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Varlık Adı'),
+                validator: (v) =>
+                v == null || v.isEmpty ? 'Bu alan boş olamaz' : null,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: type,
+                decoration: const InputDecoration(labelText: 'Tür'),
+                items: const [
+                  DropdownMenuItem(value: 'Altın', child: Text('Altın')),
+                  DropdownMenuItem(value: 'Hisse', child: Text('Hisse')),
+                  DropdownMenuItem(value: 'Kripto', child: Text('Kripto')),
+                ],
+                onChanged: (v) => setState(() => type = v),
+                validator: (v) =>
+                v == null ? 'Bir tür seçmelisiniz' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: valueCtrl,
+                decoration: const InputDecoration(labelText: 'Değer'),
+                keyboardType: TextInputType.number,
+                validator: (v) =>
+                v == null || v.isEmpty ? 'Bu alan boş olamaz' : null,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _addAsset,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Ekle'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
