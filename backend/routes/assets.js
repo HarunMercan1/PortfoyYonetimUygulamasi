@@ -2,75 +2,70 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// Tum varliklari getir (GET)
+// 🔹 TÜM VARLIKLARI GETİR (JOIN ile)
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM assets');
+    const result = await pool.query(`
+      SELECT a.id, a.name, a.amount, a.unit_value, a.total_value,
+             at.name AS type_name, c.code AS currency_code, u.name AS user_name
+      FROM assets a
+      JOIN asset_types at ON a.type_id = at.id
+      JOIN currencies c ON a.currency_id = c.id
+      JOIN users u ON a.user_id = u.id
+      ORDER BY a.id;
+    `);
     res.json(result.rows);
   } catch (err) {
-    console.error('❌ Veri cekme hatasi:', err);
-    res.status(500).send('Sunucu hatasi');
+    console.error('❌ GET /assets hatası:', err.message);
+    res.status(500).send('Sunucu hatası: ' + err.message);
   }
 });
 
-// Yeni varlik ekle (POST)
+// 🔹 YENİ VARLIK EKLE veya VAR OLANI GÜNCELLE
 router.post('/', async (req, res) => {
   try {
-    const { name, type, value } = req.body;
-    const result = await pool.query(
-      'INSERT INTO assets (name, type, value) VALUES ($1, $2, $3) RETURNING *',
-      [name, type, value]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('❌ Veri ekleme hatasi:', err);
-    res.status(500).send('Sunucu hatasi');
-  }
-});
+    const { user_id, type_id, currency_id, name, amount, unit_value } = req.body;
 
-// Bir varligi guncelle (PUT)
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, type, value } = req.body;
-
-    const result = await pool.query(
-      'UPDATE assets SET name=$1, type=$2, value=$3 WHERE id=$4 RETURNING *',
-      [name, type, value, id]
+    // 🔍 aynı kullanıcı + aynı isim + aynı tür + aynı para birimi varsa bul
+    const existing = await pool.query(
+      `SELECT * FROM assets 
+       WHERE user_id = $1 AND name = $2 AND type_id = $3 AND currency_id = $4`,
+      [user_id, name, type_id, currency_id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Varlik bulunamadi' });
+    if (existing.rows.length > 0) {
+      // 🔁 varsa sadece miktar & birim fiyat güncelle
+      const updated = await pool.query(
+        `UPDATE assets 
+         SET amount = amount + $1,
+             unit_value = $2
+         WHERE id = $3
+         RETURNING *`,
+        [amount, unit_value, existing.rows[0].id]
+      );
+
+      res.json({
+        message: '✅ Mevcut varlık güncellendi',
+        asset: updated.rows[0],
+      });
+    } else {
+      // 🆕 yoksa yeni kayıt ekle (total_value'yu PostgreSQL kendisi hesaplayacak)
+      const inserted = await pool.query(
+        `INSERT INTO assets (user_id, type_id, currency_id, name, amount, unit_value)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [user_id, type_id, currency_id, name, amount, unit_value]
+      );
+
+      res.json({
+        message: '🆕 Yeni varlık eklendi',
+        asset: inserted.rows[0],
+      });
     }
-
-    res.json(result.rows[0]);
   } catch (err) {
-    console.error('❌ Veri guncelleme hatasi:', err);
-    res.status(500).send('Sunucu hatasi');
+    console.error('❌ POST /assets hatası:', err.message);
+    res.status(500).send('Ekleme/Güncelleme hatası: ' + err.message);
   }
 });
-
-// Bir varligi sil (DELETE)
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query(
-      'DELETE FROM assets WHERE id=$1 RETURNING *',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Varlik bulunamadi' });
-    }
-
-    res.json({ message: 'Varlik basariyla silindi ✅' });
-  } catch (err) {
-    console.error('❌ Veri silme hatasi:', err);
-    res.status(500).send('Sunucu hatasi');
-  }
-});
-
-
 
 module.exports = router;

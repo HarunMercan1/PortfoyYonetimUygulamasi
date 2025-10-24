@@ -1,4 +1,3 @@
-// lib/screens/home/home_screen.dart
 import 'package:flutter/material.dart';
 import '../../data/api/api_service.dart';
 import '../../models/asset_model.dart';
@@ -25,13 +24,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchAssets() async {
+    if (!mounted) return;
+    setState(() => loading = true);
+
     try {
       final data = await ApiService.getAssets();
+      if (!mounted) return;
       setState(() {
         assets = data;
         loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Veri çekme hatası: $e')),
@@ -39,7 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  double get totalValue => assets.fold(0, (sum, a) => sum + a.value);
+  double get totalValue {
+    double sum = 0;
+    for (var a in assets) {
+      sum += a.totalValue;
+    }
+    return sum;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Grafik
+                // --- Grafik ---
                 PortfolioChart(assets: assets),
 
                 const SizedBox(height: 24),
 
-                // Özet kutuları
+                // --- Özet kutuları ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -82,60 +92,68 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // Kartlı liste
+                // --- Kartlı liste ---
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: assets.length,
                   separatorBuilder: (_, __) =>
                   const SizedBox(height: 10),
-                  itemBuilder: (_, i) => AssetCard(
-                    asset: assets[i],
-                    onDelete: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          title: const Text('Silinsin mi?'),
-                          content: Text(
-                              '${assets[i].name} adlı varlık silinecek. Emin misin?'),
-                          actions: [
-                            TextButton(
+                  itemBuilder: (_, i) {
+                    final asset = assets[i];
+                    return AssetCard(
+                      asset: asset,
+                      onDelete: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Silinsin mi?'),
+                            content: Text(
+                                '${asset.name} adlı varlık silinecek. Emin misin?'),
+                            actions: [
+                              TextButton(
                                 onPressed: () =>
                                     Navigator.pop(ctx, false),
-                                child: const Text('Vazgeç')),
-                            FilledButton(
+                                child: const Text('Vazgeç'),
+                              ),
+                              FilledButton(
                                 onPressed: () =>
                                     Navigator.pop(ctx, true),
-                                child: const Text('Sil')),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        try {
-                          await ApiService.deleteAsset(assets[i].id);
-                          _fetchAssets();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Varlık silindi ✅')),
-                          );
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content:
-                                Text('Silme hatası: $e')),
-                          );
+                                child: const Text('Sil'),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          try {
+                            await ApiService.deleteAsset(asset.id);
+                            await _fetchAssets();
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Varlık silindi ✅')),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                  Text('Silme hatası: $e')),
+                            );
+                          }
                         }
-                      }
-                    },
-                    onEdit: () async {
-                      // Burada düzenleme ekranı gelecektir 🔧
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                      },
+                      onEdit: () async {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
                             content: Text(
-                                'Düzenleme ekranı yakında eklenecek 🔧')),
-                      );
-                    },
-                  ),
+                                'Düzenleme ekranı yakında eklenecek 🔧'),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             ),
