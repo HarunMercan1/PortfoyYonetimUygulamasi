@@ -19,16 +19,10 @@ Kullanıcılar yatırım varlıklarını (örneğin altın, hisse senedi, kripto
 ## 📸 Ekran Görüntüleri
 
 <p align="center">
-  <img src="flutter/assets/2.0/1.png" alt="Ekran 1" width="300"/>
-  <img src="flutter/assets/2.0/2.png" alt="Ekran 2" width="300"/>
-  <img src="flutter/assets/2.0/3.png" alt="Ekran 3" width="300"/>
+  <img src="flutter/assets/3.0/1.png" alt="Ekran 1" width="300"/>
+  <img src="flutter/assets/3.0/2.png" alt="Ekran 2" width="300"/>
+  
 </p>
-
-<p align="center">
-  <img src="flutter/assets/2.0/4.png" alt="Ekran 4" width="300"/>
-  <img src="flutter/assets/2.0/5.png" alt="Ekran 5" width="300"/>
-</p>
-
 
 ## 🧩 Özellikler
 
