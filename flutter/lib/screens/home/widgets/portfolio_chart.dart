@@ -116,17 +116,17 @@ class _PortfolioChartState extends State<PortfolioChart> {
                   ),
 
                   // 🔹 Ortadaki metin (dokunulan dilim bilgisi)
-                  if (touchedIndex != null)
+                  if (touchedIndex != null && touchedIndex! >= 0 && touchedIndex! < entries.length)
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 400),
                       child: _CenterInfoWidget(
                         key: ValueKey(touchedIndex),
                         label: entries[touchedIndex!].key,
                         value: entries[touchedIndex!].value,
-                        percent:
-                        (entries[touchedIndex!].value / total) * 100,
+                        percent: (entries[touchedIndex!].value / total) * 100,
                       ),
                     ),
+
                 ],
               ),
             ),

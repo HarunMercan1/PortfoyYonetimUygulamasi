@@ -1,4 +1,4 @@
-# 💼 Portföy Yönetim Sistemi 5.0
+# 💼 Portföy Yönetim Sistemi v5.0
 
 Bu proje, **Gazi Üniversitesi Bilgisayar Mühendisliği — Veritabanı Yönetim Sistemleri** dersi kapsamında geliştirilmiştir.  
 Kullanıcıların yatırım portföylerini **merkezi bir sistem üzerinden yönetmesini** sağlayan bir uygulamadır.
@@ -97,6 +97,7 @@ Aşağıdaki tablolar birbirine **foreign key** bağlantıları ile bağlıdır:
 
 ## 🧩 Klasör Yapısı
 
+```
 lib/
 ┣ core/
 ┃ ┣ constants/
@@ -111,6 +112,7 @@ lib/
 ┃ ┣ edit_asset/
 ┃ ┗ main_page.dart
 ┗ main.dart
+```
 
 ---
 
