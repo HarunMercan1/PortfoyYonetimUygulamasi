@@ -48,6 +48,22 @@ class ApiService {
     }
   }
 
+  // --- VARLIK GÜNCELLE ---
+  static Future<Map<String, dynamic>> updateAsset(Map<String, dynamic> asset) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/assets/${asset['id']}'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(asset),
+    );
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    } else {
+      throw Exception('Varlık güncellenemedi (${res.statusCode})');
+    }
+  }
+
+
 
   // --- VARLIK SİL ---
   static Future<void> deleteAsset(int id) async {

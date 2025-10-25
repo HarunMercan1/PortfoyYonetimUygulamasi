@@ -68,4 +68,45 @@ router.post('/', async (req, res) => {
   }
 });
 
+// routes/assets.js
+router.delete('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await pool.query('DELETE FROM assets WHERE id = $1 RETURNING *', [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: 'Varlık bulunamadı' });
+    }
+    res.json({ message: '✅ Varlık silindi', deleted: result.rows[0] });
+  } catch (err) {
+    console.error('❌ DELETE /assets hatası:', err.message);
+    res.status(500).send('Silme hatası: ' + err.message);
+  }
+});
+
+// 🔹 VARLIK GÜNCELLE
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, amount, unit_value } = req.body;
+    const { id } = req.params;
+
+    const updated = await pool.query(
+      `UPDATE assets 
+       SET name = $1, amount = $2, unit_value = $3 
+       WHERE id = $4 
+       RETURNING *`,
+      [name, amount, unit_value, id]
+    );
+
+    if (updated.rowCount === 0) {
+      return res.status(404).json({ message: 'Varlık bulunamadı' });
+    }
+
+    res.json({ message: '✅ Varlık güncellendi', asset: updated.rows[0] });
+  } catch (err) {
+    console.error('❌ PUT /assets hatası:', err.message);
+    res.status(500).send('Güncelleme hatası: ' + err.message);
+  }
+});
+
+
 module.exports = router;

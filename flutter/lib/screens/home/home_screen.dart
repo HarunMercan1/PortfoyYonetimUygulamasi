@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/api/api_service.dart';
 import '../../models/asset_model.dart';
+import '../edit_asset/edit_asset_sheet.dart';
 import 'widgets/portfolio_chart.dart';
 import 'widgets/summary_card.dart';
 import 'widgets/asset_card.dart';
@@ -145,13 +146,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
                       },
                       onEdit: () async {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Düzenleme ekranı yakında eklenecek 🔧'),
+                        final result = await showModalBottomSheet<bool>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => FractionallySizedBox(
+                            heightFactor: 0.9,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              ),
+                              child: EditAssetSheet(asset: asset), // 🔥 Düzenleme sayfası
+                            ),
                           ),
                         );
+
+                        // Güncellendiyse listeyi yenile
+                        if (result == true) {
+                          await _fetchAssets();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Varlık güncellendi ✅')),
+                            );
+                          }
+                        }
                       },
+
                     );
                   },
                 ),

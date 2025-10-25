@@ -12,27 +12,19 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    AddAssetSheet(), // direkt sayfa olarak kullanıyoruz
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: const HomeScreen(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [cs.primaryContainer.withOpacity(0.8), cs.tertiaryContainer.withOpacity(0.8)],
+            colors: [
+              cs.primaryContainer.withOpacity(0.8),
+              cs.tertiaryContainer.withOpacity(0.8)
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -55,8 +47,37 @@ class _MainPageState extends State<MainPage> {
           ),
           child: NavigationBar(
             selectedIndex: _selectedIndex,
-            onDestinationSelected: _onItemTapped,
-            backgroundColor: Colors.transparent, // 🔥 transparan olacak
+            onDestinationSelected: (index) async {
+              if (index == 0) {
+                // sadece dashboard (Home)
+                setState(() => _selectedIndex = 0);
+              } else if (index == 1) {
+                // 🔥 Add Asset alt sayfa olarak açılıyor
+                final result = await showModalBottomSheet<bool>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => FractionallySizedBox(
+                    heightFactor: 0.9,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                      ),
+                      child: const AddAssetSheet(),
+                    ),
+                  ),
+                );
+
+                // 🔄 Eğer varlık eklendiyse HomeScreen yenilensin
+                if (result == true && mounted) {
+                  setState(() {}); // rebuild → HomeScreen kendini yeniler
+                }
+              }
+            },
+            backgroundColor: Colors.transparent,
             indicatorColor: cs.primary.withOpacity(0.3),
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: const [
@@ -74,7 +95,6 @@ class _MainPageState extends State<MainPage> {
           ),
         ),
       ),
-
     );
   }
 }
