@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import '../../data/api/api_service.dart';
 import '../../models/asset_model.dart';
-import '../edit_asset/edit_asset_sheet.dart';
 import 'widgets/portfolio_chart.dart';
 import 'widgets/summary_card.dart';
 import 'widgets/asset_card.dart';
-import '../add_asset/add_asset_sheet.dart';
+import '../edit_asset/edit_asset_sheet.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   List<AssetModel> assets = [];
   bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchAssets();
+    fetchAssets();
   }
 
-  Future<void> _fetchAssets() async {
+  Future<void> fetchAssets() async {
     if (!mounted) return;
     setState(() => loading = true);
 
@@ -60,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-        onRefresh: _fetchAssets,
+        onRefresh: fetchAssets,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (confirm == true) {
                           try {
                             await ApiService.deleteAsset(asset.id);
-                            await _fetchAssets();
+                            await fetchAssets();
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         // Güncellendiyse listeyi yenile
                         if (result == true) {
-                          await _fetchAssets();
+                          await fetchAssets();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Varlık güncellendi ✅')),

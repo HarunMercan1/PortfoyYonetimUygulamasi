@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../data/api/api_service.dart';
+import 'auth/login_screen.dart';
 import 'home/home_screen.dart';
 import 'add_asset/add_asset_sheet.dart';
 
@@ -12,18 +14,44 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
 
+  // 🔑 HomeScreen state'ine erişim
+  final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
+
+  Future<void> _logout() async {
+    await ApiService.logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: const HomeScreen(),
+      appBar: AppBar(
+        title: const Text('Portföy Yönetimi'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Çıkış yap',
+            onPressed: _logout,
+          ),
+        ],
+      ),
+
+      // ✅ HomeScreen key ile kuruldu
+      body: HomeScreen(key: _homeKey),
+
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
               cs.primaryContainer.withOpacity(0.8),
-              cs.tertiaryContainer.withOpacity(0.8)
+              cs.tertiaryContainer.withOpacity(0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -49,10 +77,8 @@ class _MainPageState extends State<MainPage> {
             selectedIndex: _selectedIndex,
             onDestinationSelected: (index) async {
               if (index == 0) {
-                // sadece dashboard (Home)
                 setState(() => _selectedIndex = 0);
               } else if (index == 1) {
-                // 🔥 Add Asset alt sayfa olarak açılıyor
                 final result = await showModalBottomSheet<bool>(
                   context: context,
                   isScrollControlled: true,
@@ -71,9 +97,9 @@ class _MainPageState extends State<MainPage> {
                   ),
                 );
 
-                // 🔄 Eğer varlık eklendiyse HomeScreen yenilensin
+                // ✅ Eklendiyse listeyi anında yenile
                 if (result == true && mounted) {
-                  setState(() {}); // rebuild → HomeScreen kendini yeniler
+                  _homeKey.currentState?.fetchAssets();
                 }
               }
             },

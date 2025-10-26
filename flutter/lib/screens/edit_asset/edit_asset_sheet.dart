@@ -15,15 +15,16 @@ class _EditAssetSheetState extends State<EditAssetSheet> {
   late TextEditingController _nameController;
   late TextEditingController _amountController;
   late TextEditingController _unitValueController;
-
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.asset.name);
-    _amountController = TextEditingController(text: widget.asset.amount.toString());
-    _unitValueController = TextEditingController(text: widget.asset.unitValue.toString());
+    _amountController =
+        TextEditingController(text: widget.asset.amount.toString());
+    _unitValueController =
+        TextEditingController(text: widget.asset.unitValue.toString());
   }
 
   Future<void> _updateAsset() async {
@@ -47,12 +48,11 @@ class _EditAssetSheetState extends State<EditAssetSheet> {
         SnackBar(content: Text(res['message'] ?? 'Varlık güncellendi ✅')),
       );
 
-      Navigator.pop(context, true); // Güncellendi bilgisini gönder
+      Navigator.pop(context, true); // ✅ Düzenlendi sinyali gönder
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Güncelleme hatası: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Güncelleme hatası: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -75,7 +75,8 @@ class _EditAssetSheetState extends State<EditAssetSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Varlığı Düzenle', style: Theme.of(context).textTheme.headlineSmall),
+              Text('Varlığı Düzenle',
+                  style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
@@ -101,7 +102,8 @@ class _EditAssetSheetState extends State<EditAssetSheet> {
                 onPressed: _saving ? null : _updateAsset,
                 icon: _saving
                     ? const SizedBox(
-                  width: 20, height: 20,
+                  width: 20,
+                  height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
                     : const Icon(Icons.save_rounded),

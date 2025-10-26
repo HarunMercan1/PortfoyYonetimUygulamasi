@@ -51,7 +51,6 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
 
     try {
       final result = await ApiService.addAsset({
-        'user_id': 1,
         'type_id': int.parse(_selectedType!),
         'currency_id': int.parse(_selectedCurrency!),
         'name': _nameController.text.trim(),
