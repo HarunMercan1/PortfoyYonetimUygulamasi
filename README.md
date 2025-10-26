@@ -1,38 +1,38 @@
-# 💼 Portföy Yönetim Sistemi v5.1
+# 💼 Portföy Yönetim Sistemi v6.0
 
 Bu proje, **Gazi Üniversitesi Bilgisayar Mühendisliği — Veritabanı Yönetim Sistemleri** dersi kapsamında geliştirilmiştir.  
-Kullanıcıların yatırım portföylerini **merkezi bir sistem üzerinden yönetmesini** sağlayan bir uygulamadır.
+Kullanıcıların yatırım portföylerini **kişisel hesapları üzerinden güvenli bir şekilde yönetmesini** sağlayan bir uygulamadır.
 
-Uygulama; hisse senetleri, kripto paralar, emtialar ve diğer varlık türlerini destekler.  
-Kullanıcılar varlıklarını ekleyebilir, silebilir, düzenleyebilir ve portföy dağılımını grafiksel olarak analiz edebilir. 📊
+Artık her kullanıcı, sadece **kendi varlıklarını** görebilir, ekleyebilir, silebilir ve düzenleyebilir.  
+JWT tabanlı kimlik doğrulama sayesinde tüm işlemler güvenli hale getirilmiştir. 🔐
 
 ---
 
 ## 🧱 Mimari Yapı
 
-| Katman               | Teknolojiler                         |
-| :------------------- | :----------------------------------- |
-| **Frontend (Mobil)** | Flutter (Material 3, http, fl_chart) |
-| **Backend (API)**    | Node.js + Express.js                 |
-| **Veritabanı (DB)**  | PostgreSQL                           |
-| **Araçlar**          | Postman, VSCode, Android Studio      |
+| Katman               | Teknolojiler                                         |
+| :------------------- | :--------------------------------------------------- |
+| **Frontend (Mobil)** | Flutter (Material 3, http, fl_chart, secure_storage) |
+| **Backend (API)**    | Node.js + Express.js + JWT Authentication            |
+| **Veritabanı (DB)**  | PostgreSQL                                           |
+| **Araçlar**          | Postman, VSCode, Android Studio                      |
 
 ---
 
 ## 🗄️ Veritabanı Yapısı
 
-Yeni veritabanı ilişkisel şekilde tasarlanmıştır.  
-Aşağıdaki tablolar birbirine **foreign key** bağlantıları ile bağlıdır:
+Veritabanı ilişkisel olarak tasarlanmıştır ve **her varlık doğrudan bir kullanıcıya bağlıdır.**  
+Aşağıdaki tablolar foreign key bağlantıları ile birbirine bağlıdır:
 
-| Tablo            | Açıklama                                            |
-| :--------------- | :-------------------------------------------------- |
-| **users**        | Kullanıcı bilgilerini tutar                         |
-| **asset_types**  | Varlık türlerini (Hisse, Kripto, Emtia vb.) tutar   |
-| **currencies**   | Para birimlerini (TRY, USD, EUR vb.) tutar          |
-| **assets**       | Kullanıcıya ait tüm varlık kayıtlarını tutar        |
-| **transactions** | (Hazırlıkta) Varlık alım-satım geçmişini saklayacak |
+| Tablo            | Açıklama                                          |
+| :--------------- | :------------------------------------------------ |
+| **users**        | Kullanıcı bilgilerini ve kimlik bilgilerini tutar |
+| **asset_types**  | Varlık türlerini (Hisse, Kripto, Emtia vb.) tutar |
+| **currencies**   | Para birimlerini (TRY, USD, EUR vb.) tutar        |
+| **assets**       | Her kullanıcının varlık kayıtlarını saklar        |
+| **transactions** | (Hazırlıkta) Varlık alım-satım geçmişini tutacak  |
 
-> 💡 Bu yapı sayesinde uygulama artık **çoklu kullanıcı, çoklu para birimi ve çoklu varlık türü** destekler hale gelmiştir.
+> 💡 Artık sistem **çoklu kullanıcı** desteğine sahiptir; her kullanıcı sadece kendi portföyünü görür.
 
 ---
 
@@ -40,81 +40,83 @@ Aşağıdaki tablolar birbirine **foreign key** bağlantıları ile bağlıdır:
 
 - 🔹 Express.js tabanlı RESTful API
 - 🔹 PostgreSQL bağlantısı (pg Pool)
+- 🔹 JWT tabanlı **kimlik doğrulama** (login / register / token doğrulama)
 - 🔹 CRUD işlemleri:
-  - **GET** → Tüm varlıkları / türleri / para birimlerini getirir
-  - **POST** → Yeni varlık ekleme
-  - **PUT** → Varlık düzenleme (yeni eklendi ✅)
-  - **DELETE** → Varlık silme (bottom sheet içinden onaylı)
-- 🔹 JOIN yapılarıyla ilişkisel veri çekimi
-- 🔹 Dinamik varlık türü ve para birimi listeleri
-- 🔹 JSON tabanlı cevap yapısı
-- 🔹 Hatalar için gelişmiş try/catch loglama
+  - **GET** → Giriş yapan kullanıcıya ait varlıkları getirir
+  - **POST** → Yeni varlık ekleme (token’dan user_id alınır)
+  - **PUT** → Varlık düzenleme
+  - **DELETE** → Varlık silme
+- 🔹 Her API isteğinde token doğrulama (`authMiddleware`)
+- 🔹 `req.user.userId` üzerinden kullanıcıya özel sorgular
+- 🔹 Gelişmiş hata yakalama ve loglama sistemi
 
 ---
 
-## 📱 Frontend Özellikleri (v5.0)
+## 📱 Frontend Özellikleri (v6.0)
 
 - 🎨 Flutter (Material 3, dark/light theme desteği)
-- 🔁 **Tam bottom sheet sistemi**:
-  - “Yeni Varlık Ekle” formu artık sabit sayfa değil, **modal bottom sheet** olarak açılır
-  - “Düzenle” işlemi de aynı şekilde **bottom sheet** üzerinden yapılır
-  - “Sil” işlemi **onay dialog** ile yapılır
-- 🧩 API ile tam CRUD senkronizasyonu
-- 📊 **Gelişmiş Pie Chart**:
-  - Her dilim içinde tür adı + yüzde oranı
-  - Dokunulduğunda merkezde seçilen varlık türü, oranı ve toplam değeri
-  - Modern pastel renk paleti ve animasyonlu geçişler
-- 🔄 Gerçek zamanlı liste yenileme
-- 💬 Snackbar ile işlem bildirimleri (ekleme, silme, düzenleme)
-- 💡 Responsive, temiz, sade UI
+- 🔐 **Kullanıcı Girişi ve Oturum Yönetimi**
+  - Login işlemi sonrası alınan JWT token **Flutter Secure Storage**’da saklanır
+  - Her API isteğinde `Authorization: Bearer <token>` header’ı otomatik eklenir
+  - Logout ile token güvenli şekilde silinir
+- 🧩 CRUD İşlemleri
+  - “Yeni Varlık Ekle” → modal bottom sheet üzerinden
+  - “Düzenle” → **EditAssetSheet** üzerinden inline form
+  - “Sil” → onay dialog ile
+- 📊 **Modern Pie Chart**
+  - Dilim içinde tür adı + yüzde oranı
+  - Dokunulduğunda merkezde detay bilgisi (oran + toplam ₺)
+  - Smooth animasyonlar ve modern renk paleti
+- 🔄 Gerçek zamanlı yenileme (ekleme/düzenleme sonrası otomatik)
+- 💬 Snackbar ile işlem geri bildirimleri
+- 💡 Responsive ve sade arayüz
 
 ---
 
-## 🚀 Yeni Eklenenler (v5.0 Güncellemesi)
+## 🚀 Yeni Eklenenler (v6.0 Güncellemesi)
 
-| Özellik                      | Açıklama                                                 |
-| :--------------------------- | :------------------------------------------------------- |
-| 🧩 **PUT Route (Backend)**   | Varlık güncelleme API’si eklendi (`/api/assets/:id`)     |
-| 🗂️ **EditAssetSheet**        | Varlık düzenleme arayüzü eklendi (bottom sheet)          |
-| ❌ **Delete Route**          | Silme işlemleri backend tarafında desteklendi            |
-| 📊 **Modern Grafik**         | Pie chart içi etiketleme + merkez bilgi + animasyon      |
-| 🔄 **Sayfa Yenileme**        | Ekleme/Düzenleme sonrası otomatik yenileme               |
-| 💬 **Snackbar Bildirimleri** | Başarılı / Hata mesajları artık kullanıcıya gösteriliyor |
-| 💡 **UI Düzenlemeleri**      | Karanlık temada renk kontrastları iyileştirildi          |
+| Özellik                        | Açıklama                                                           |
+| :----------------------------- | :----------------------------------------------------------------- |
+| 🔐 **JWT Authentication**      | Giriş yapan kullanıcıya özel token sistemi eklendi                 |
+| 👤 **Kullanıcı Bazlı Portföy** | Her kullanıcı sadece kendi varlıklarını görebiliyor                |
+| 🔑 **Secure Token Storage**    | Flutter Secure Storage ile token güvenli şekilde saklanıyor        |
+| 🔁 **Header Entegrasyonu**     | Her istek otomatik olarak `Authorization` header’ı içeriyor        |
+| 🧩 **Auth Middleware**         | Backend tarafında token doğrulama zorunlu hale getirildi           |
+| 🧱 **Kod Refaktörü**           | assets.js, auth.js ve api_service.dart yapısı yeniden düzenlendi   |
+| ⚙️ **Logout Özelliği**         | Kullanıcı çıkışı artık token’ı temizliyor ve Login’e yönlendiriyor |
+| 🧠 **Tam Senkronizasyon**      | Flutter ↔ Node.js ↔ PostgreSQL arasında kullanıcı bazlı veri akışı |
 
 ---
 
-## 📸 Ekran Görüntüleri (v5.0)
+## 📸 Ekran Görüntüleri (v6.0)
 
 <p align="center">
-  <img src="flutter/assets/5.0/1.png" alt="Dashboard" width="300"/>
-  <img src="flutter/assets/5.0/2.png" alt="Varlık Listesi" width="300"/>
-  <img src="flutter/assets/5.0/3.png" alt="Yeni Varlık Ekle" width="300"/>
-  <img src="flutter/assets/5.0/4.png" alt="Varlık Düzenle" width="300"/>
+  <img src="flutter/assets/6.0/5.png" alt="Login" width="300"/>
+  <img src="flutter/assets/6.0/1.png" alt="Dashboard" width="300"/>
+  <img src="flutter/assets/6.0/2.png" alt="Hisseler" width="300"/>
+  <img src="flutter/assets/6.0/3.png" alt="Yeni Varlık" width="300"/>
+  <img src="flutter/assets/6.0/4.png" alt="Düzenle" width="300"/>
 </p>
-
----
 
 ## 🧩 Klasör Yapısı
 
 ```
 lib/
 ┣ core/
-┃ ┣ constants/
 ┃ ┣ theme/
 ┃ ┗ widgets/
 ┣ data/
 ┃ ┣ api/api_service.dart
 ┃ ┗ models/asset_model.dart
 ┣ screens/
+┃ ┣ auth/
 ┃ ┣ home/
 ┃ ┣ add_asset/
 ┃ ┣ edit_asset/
 ┃ ┗ main_page.dart
 ┗ main.dart
-```
 
----
+```
 
 ## 👨‍💻 Geliştirici
 
