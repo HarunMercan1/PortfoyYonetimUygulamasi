@@ -1,4 +1,4 @@
-# 💼 Portföy Yönetim Sistemi v6.0
+# 💼 Portföy Yönetim Sistemi v6.0.1
 
 Bu proje, **Gazi Üniversitesi Bilgisayar Mühendisliği — Veritabanı Yönetim Sistemleri** dersi kapsamında geliştirilmiştir.  
 Kullanıcıların yatırım portföylerini **kişisel hesapları üzerinden güvenli bir şekilde yönetmesini** sağlayan bir uygulamadır.
@@ -103,16 +103,26 @@ Aşağıdaki tablolar foreign key bağlantıları ile birbirine bağlıdır:
 ```
 lib/
 ┣ core/
-┃ ┣ theme/
-┃ ┗ widgets/
+┃ ┗ theme/
+┃   ┗ app_theme.dart
 ┣ data/
-┃ ┣ api/api_service.dart
-┃ ┗ models/asset_model.dart
+┃ ┗ api/
+┃   ┗ api_service.dart
+┣ models/
+┃ ┗ asset_model.dart
 ┣ screens/
-┃ ┣ auth/
-┃ ┣ home/
 ┃ ┣ add_asset/
+┃ ┃ ┗ add_asset_sheet.dart
+┃ ┣ auth/
+┃ ┃ ┗ login_screen.dart
 ┃ ┣ edit_asset/
+┃ ┃ ┗ edit_asset_sheet.dart
+┃ ┣ home/
+┃ ┃ ┣ widgets/
+┃ ┃ ┃ ┣ asset_card.dart
+┃ ┃ ┃ ┣ portfolio_chart.dart
+┃ ┃ ┃ ┗ summary_card.dart
+┃ ┃ ┗ home_screen.dart
 ┃ ┗ main_page.dart
 ┗ main.dart
 

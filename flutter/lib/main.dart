@@ -35,7 +35,6 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-
           // Token varsa MainPage, yoksa LoginScreen
           return snapshot.data! ? const MainPage() : const LoginScreen();
         },
