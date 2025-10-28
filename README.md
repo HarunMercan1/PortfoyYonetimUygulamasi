@@ -1,4 +1,4 @@
-# 💼 Portföy Yönetim Sistemi v6.0.1
+# 💼 Portföy Yönetim Sistemi v6.1
 
 Bu proje, **Gazi Üniversitesi Bilgisayar Mühendisliği — Veritabanı Yönetim Sistemleri** dersi kapsamında geliştirilmiştir.  
 Kullanıcıların yatırım portföylerini **kişisel hesapları üzerinden güvenli bir şekilde yönetmesini** sağlayan bir uygulamadır.
@@ -92,6 +92,7 @@ Aşağıdaki tablolar foreign key bağlantıları ile birbirine bağlıdır:
 
 <p align="center">
   <img src="flutter/assets/6.0/5.png" alt="Login" width="300"/>
+  <img src="flutter/assets/6.1/1.png" alt="Kayıt ol" width="300"/>
   <img src="flutter/assets/6.0/1.png" alt="Dashboard" width="300"/>
   <img src="flutter/assets/6.0/2.png" alt="Hisseler" width="300"/>
   <img src="flutter/assets/6.0/3.png" alt="Yeni Varlık" width="300"/>
