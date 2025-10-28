@@ -132,5 +132,5 @@ lib/
 
 **Harun Reşit Mercan**  
 🎓 Gazi Üniversitesi — Bilgisayar Mühendisliği  
-🌍 Flutter • Node.js • PostgreSQL Developer  
+🌍 Flutter Developer  
 📬 [LinkedIn](https://linkedin.com/in/harunresitmercan) • [GitHub](https://github.com/HarunMercan1)
