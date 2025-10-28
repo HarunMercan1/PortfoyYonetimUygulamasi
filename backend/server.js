@@ -14,6 +14,7 @@ app.use("/api/types", require("./routes/assetTypes"));
 app.use("/api/currencies", require("./routes/currencies"));
 app.use("/api/transactions", require("./routes/transactions"));
 app.use("/api/auth", require("./routes/auth"));
+app.use("/api/stocks", require("./routes/stocks"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server ${PORT} portunda calisiyor...`));

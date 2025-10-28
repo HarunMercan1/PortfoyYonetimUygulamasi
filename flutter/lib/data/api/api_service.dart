@@ -68,6 +68,17 @@ class ApiService {
     throw Exception('Para birimleri alınamadı (${res.statusCode})');
   }
 
+  static Future<List<dynamic>> getStocks() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/stocks'), headers: headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    } else {
+      throw Exception('Hisseler alınamadı (${res.statusCode})');
+    }
+  }
+
+
   // --- YENİ VARLIK EKLE ---
   static Future<Map<String, dynamic>> addAsset(
       Map<String, dynamic> asset) async {
@@ -160,5 +171,9 @@ class ApiService {
       throw Exception(jsonDecode(res.body)['message'] ?? 'Kayıt hatası');
     }
   }
+
+
+
+
 
 }

@@ -10,14 +10,19 @@ class AddAssetSheet extends StatefulWidget {
 
 class _AddAssetSheetState extends State<AddAssetSheet> {
   final _formKey = GlobalKey<FormState>();
-  String? _selectedType;
-  String? _selectedCurrency;
+
+  String? _selectedType;        // asset_types.id
+  String? _selectedCurrency;    // currencies.id
+  String? _selectedStock;       // stocks.symbol (AKBNK gibi)
+
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _unitValueController = TextEditingController();
 
   List<dynamic> _types = [];
   List<dynamic> _currencies = [];
+  List<dynamic> _stocks = [];
+
   bool _saving = false;
 
   @override
@@ -30,10 +35,13 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
     try {
       final types = await ApiService.getAssetTypes();
       final currencies = await ApiService.getCurrencies();
+      final stocks = await ApiService.getStocks(); // BIST listesi
+
       if (!mounted) return;
       setState(() {
         _types = types;
         _currencies = currencies;
+        _stocks = stocks;
       });
     } catch (e) {
       if (!mounted) return;
@@ -48,40 +56,42 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
     if (_saving) return;
 
     setState(() => _saving = true);
-
     try {
-      final result = await ApiService.addAsset({
-        'type_id': int.parse(_selectedType!),
-        'currency_id': int.parse(_selectedCurrency!),
-        'name': _nameController.text.trim(),
-        'amount': double.tryParse(_amountController.text) ?? 0,
-        'unit_value': double.tryParse(_unitValueController.text) ?? 0,
-      });
-
-      if (!mounted) return;
-      debugPrint('✅ BACKEND CEVABI: $result');
-
-      String message = 'Varlık eklendi ✅';
-      if (result is Map && result['message'] != null) {
-        message = result['message'];
+      // Tür adını bul
+      String? typeName;
+      if (_selectedType != null) {
+        typeName = _types
+            .firstWhere((t) => t['id'].toString() == _selectedType)['name']
+            .toString();
       }
 
-      // SnackBar'ı güvenli şekilde göster
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      final body = {
+        'type_id': int.parse(_selectedType!),
+        'currency_id': int.parse(_selectedCurrency!),
+        // Hisse ise name = seçilen sembol; değilse manuel girilen ad
+        'name': typeName == 'Hisse'
+            ? (_selectedStock ?? '')
+            : _nameController.text.trim(),
+        'amount': double.tryParse(_amountController.text) ?? 0,
+        'unit_value': double.tryParse(_unitValueController.text) ?? 0,
+      };
 
-      // 🧱 pop'u doğrudan değil, frame bittiğinde çağır
+      final result = await ApiService.addAsset(body);
+
+      if (!mounted) return;
+      final msg = (result is Map && result['message'] != null)
+          ? result['message'].toString()
+          : 'Varlık eklendi ✅';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
+      // Bottom sheet'i kapat ve HomeScreen’e refresh sinyali gönder
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.pop(context, true);
       });
-    } catch (e, st) {
-      debugPrint('❌ Hata: $e\n$st');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ekleme hatası: $e')),
-        );
-      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Ekleme hatası: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -91,6 +101,14 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
+    // Seçili türün adını bul
+    String? selectedTypeName;
+    if (_selectedType != null) {
+      selectedTypeName = _types
+          .firstWhere((t) => t['id'].toString() == _selectedType)['name']
+          .toString();
+    }
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
@@ -98,44 +116,94 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
           key: _formKey,
           child: Column(
             children: [
-              Text(
-                "Yeni Varlık Ekle",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text('Yeni Varlık Ekle',
+                  style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 20),
 
-              // Varlık adı
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Varlık Adı'),
-                validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
-              ),
-              const SizedBox(height: 10),
-
-              // Tür seçimi
+              // Varlık Türü
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Varlık Türü'),
                 value: _selectedType,
                 items: _types
-                    .map((t) => DropdownMenuItem(
-                  value: t['id'].toString(),
-                  child: Text(t['name']),
-                ))
+                    .map<DropdownMenuItem<String>>(
+                      (t) => DropdownMenuItem<String>(
+                    value: t['id'].toString(),
+                    child: Text(t['name'].toString()),
+                  ),
+                )
                     .toList(),
-                onChanged: (v) => setState(() => _selectedType = v),
+                onChanged: (v) {
+                  setState(() {
+                    _selectedType = v;
+                    // Tür değişince alanları temizle
+                    _selectedStock = null;
+                    _nameController.clear();
+                  });
+                },
                 validator: (v) => v == null ? 'Seçim zorunlu' : null,
               ),
               const SizedBox(height: 10),
 
-              // Para birimi
+              // Hisse ise sembol seçimi
+              if (selectedTypeName == 'Hisse') ...[
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Hisse Seç'),
+                  value: _selectedStock,
+                  items: _stocks
+                      .map<DropdownMenuItem<String>>(
+                        (s) => DropdownMenuItem<String>(
+                      value: s['symbol'].toString(),
+                      child: Text(
+                        '${s['symbol']} - ${s['name']}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
+                  )
+                      .toList(),
+                  // Seçili görünümü de ellipsis’li yap
+                  selectedItemBuilder: (context) => _stocks
+                      .map<Widget>(
+                        (s) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${s['symbol']} - ${s['name']}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
+                  )
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedStock = v),
+                  validator: (v) => v == null ? 'Hisse seçimi zorunlu' : null,
+                ),
+                const SizedBox(height: 10),
+              ] else ...[
+                // Hisse değilse manuel ad
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Varlık Adı'),
+                  validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              // Para Birimi
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Para Birimi'),
                 value: _selectedCurrency,
                 items: _currencies
-                    .map((c) => DropdownMenuItem(
-                  value: c['id'].toString(),
-                  child: Text(c['code']),
-                ))
+                    .map<DropdownMenuItem<String>>(
+                      (c) => DropdownMenuItem<String>(
+                    value: c['id'].toString(),
+                    child: Text(c['code'].toString()),
+                  ),
+                )
                     .toList(),
                 onChanged: (v) => setState(() => _selectedCurrency = v),
                 validator: (v) => v == null ? 'Seçim zorunlu' : null,
@@ -146,21 +214,23 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
               TextFormField(
                 controller: _amountController,
                 decoration: const InputDecoration(labelText: 'Miktar'),
-                keyboardType: TextInputType.number,
+                keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
               ),
               const SizedBox(height: 10),
 
-              // Birim fiyat
+              // Birim Fiyat
               TextFormField(
                 controller: _unitValueController,
                 decoration: const InputDecoration(labelText: 'Birim Fiyat'),
-                keyboardType: TextInputType.number,
+                keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
               ),
               const SizedBox(height: 20),
 
-              // Kaydet butonu
+              // Kaydet
               ElevatedButton.icon(
                 onPressed: _saving ? null : _saveAsset,
                 icon: _saving
