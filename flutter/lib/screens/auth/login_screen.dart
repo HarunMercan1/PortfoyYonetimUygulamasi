@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:portfoy_yonetimi/screens/auth/register_screen.dart';
 import '../../data/api/api_service.dart';
 import '../main_page.dart';
 
@@ -91,6 +92,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     minimumSize: const Size(double.infinity, 48),
                   ),
                 ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
+                  },
+                  child: const Text('Hesabın yok mu? Kayıt Ol'),
+                )
+
               ],
             ),
           ),

@@ -145,4 +145,20 @@ class ApiService {
       throw Exception(jsonDecode(res.body)['message'] ?? 'Giriş hatası');
     }
   }
+
+  // --- KULLANICI KAYIT ---
+  static Future<Map<String, dynamic>> register(String name, String email, String password) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name, 'email': email, 'password': password}),
+    );
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    } else {
+      throw Exception(jsonDecode(res.body)['message'] ?? 'Kayıt hatası');
+    }
+  }
+
 }
