@@ -13,7 +13,7 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
 
   String? _selectedType;        // asset_types.id
   String? _selectedCurrency;    // currencies.id
-  String? _selectedStock;       // stocks.symbol (AKBNK gibi)
+  String? _selectedSymbol;      // hisse veya kripto sembolü
 
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
@@ -22,6 +22,7 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
   List<dynamic> _types = [];
   List<dynamic> _currencies = [];
   List<dynamic> _stocks = [];
+  List<dynamic> _cryptos = []; // 🆕 kripto listesi
 
   bool _saving = false;
 
@@ -35,13 +36,15 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
     try {
       final types = await ApiService.getAssetTypes();
       final currencies = await ApiService.getCurrencies();
-      final stocks = await ApiService.getStocks(); // BIST listesi
+      final stocks = await ApiService.getStocks();
+      final cryptos = await ApiService.getCryptos(); // 🆕
 
       if (!mounted) return;
       setState(() {
         _types = types;
         _currencies = currencies;
         _stocks = stocks;
+        _cryptos = cryptos;
       });
     } catch (e) {
       if (!mounted) return;
@@ -68,9 +71,8 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
       final body = {
         'type_id': int.parse(_selectedType!),
         'currency_id': int.parse(_selectedCurrency!),
-        // Hisse ise name = seçilen sembol; değilse manuel girilen ad
-        'name': typeName == 'Hisse'
-            ? (_selectedStock ?? '')
+        'name': (typeName == 'Hisse' || typeName == 'Kripto')
+            ? (_selectedSymbol ?? '')
             : _nameController.text.trim(),
         'amount': double.tryParse(_amountController.text) ?? 0,
         'unit_value': double.tryParse(_unitValueController.text) ?? 0,
@@ -84,7 +86,6 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
           : 'Varlık eklendi ✅';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
-      // Bottom sheet'i kapat ve HomeScreen’e refresh sinyali gönder
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.pop(context, true);
       });
@@ -136,8 +137,7 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                 onChanged: (v) {
                   setState(() {
                     _selectedType = v;
-                    // Tür değişince alanları temizle
-                    _selectedStock = null;
+                    _selectedSymbol = null;
                     _nameController.clear();
                   });
                 },
@@ -145,12 +145,12 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
               ),
               const SizedBox(height: 10),
 
-              // Hisse ise sembol seçimi
+              // Hisse seçildiyse
               if (selectedTypeName == 'Hisse') ...[
                 DropdownButtonFormField<String>(
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Hisse Seç'),
-                  value: _selectedStock,
+                  value: _selectedSymbol,
                   items: _stocks
                       .map<DropdownMenuItem<String>>(
                         (s) => DropdownMenuItem<String>(
@@ -164,7 +164,6 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                     ),
                   )
                       .toList(),
-                  // Seçili görünümü de ellipsis’li yap
                   selectedItemBuilder: (context) => _stocks
                       .map<Widget>(
                         (s) => Align(
@@ -178,19 +177,57 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                     ),
                   )
                       .toList(),
-                  onChanged: (v) => setState(() => _selectedStock = v),
+                  onChanged: (v) => setState(() => _selectedSymbol = v),
                   validator: (v) => v == null ? 'Hisse seçimi zorunlu' : null,
                 ),
                 const SizedBox(height: 10),
-              ] else ...[
-                // Hisse değilse manuel ad
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Varlık Adı'),
-                  validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
+              ]
+              // Kripto seçildiyse
+              else if (selectedTypeName == 'Kripto') ...[
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Kripto Seç'),
+                  value: _selectedSymbol,
+                  items: _cryptos
+                      .map<DropdownMenuItem<String>>(
+                        (c) => DropdownMenuItem<String>(
+                      value: c['symbol'].toString(),
+                      child: Text(
+                        '${c['symbol']} - ${c['name']}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
+                  )
+                      .toList(),
+                  selectedItemBuilder: (context) => _cryptos
+                      .map<Widget>(
+                        (c) => Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${c['symbol']} - ${c['name']}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
+                  )
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedSymbol = v),
+                  validator: (v) => v == null ? 'Kripto seçimi zorunlu' : null,
                 ),
                 const SizedBox(height: 10),
-              ],
+              ]
+              // Diğer türler
+              else ...[
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(labelText: 'Varlık Adı'),
+                    validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
+                  ),
+                  const SizedBox(height: 10),
+                ],
 
               // Para Birimi
               DropdownButtonFormField<String>(

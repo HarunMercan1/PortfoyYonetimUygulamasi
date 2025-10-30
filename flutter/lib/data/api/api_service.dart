@@ -78,6 +78,14 @@ class ApiService {
     }
   }
 
+  static Future<List<dynamic>> getCryptos() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/cryptos'), headers: headers);
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Kripto listesi alınamadı');
+  }
+
+
 
   // --- YENİ VARLIK EKLE ---
   static Future<Map<String, dynamic>> addAsset(
