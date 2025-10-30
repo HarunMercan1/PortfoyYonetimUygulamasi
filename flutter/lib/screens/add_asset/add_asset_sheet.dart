@@ -138,6 +138,23 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                     _selectedSymbol = null;
                     _nameController.clear();
                     _unitValueController.clear();
+
+                    // 💰 Para birimini otomatik belirle
+                    final selectedTypeName = _types
+                        .firstWhere((t) => t['id'].toString() == v)['name']
+                        .toString();
+
+                    if (selectedTypeName == 'Hisse') {
+                      _selectedCurrency = _currencies
+                          .firstWhere((c) => c['code'] == 'TRY')['id']
+                          .toString();
+                    } else if (selectedTypeName == 'Kripto') {
+                      _selectedCurrency = _currencies
+                          .firstWhere((c) => c['code'] == 'USD')['id']
+                          .toString();
+                    } else {
+                      _selectedCurrency = null;
+                    }
                   });
                 },
                 validator: (v) => v == null ? 'Seçim zorunlu' : null,
@@ -200,7 +217,6 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                   onChanged: (v) {
                     setState(() {
                       _selectedSymbol = v;
-                      // 💰 Fiyatı otomatik getir
                       final selected = _cryptos.firstWhere(
                               (c) => c['symbol'] == v,
                           orElse: () => null);
@@ -251,12 +267,18 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
               ),
               const SizedBox(height: 10),
 
-              // 🔹 Birim Fiyat (Kriptoda otomatik dolduruluyor)
+              // 🔹 Birim Fiyat
               TextFormField(
                 controller: _unitValueController,
-                readOnly: selectedTypeName == 'Kripto',
-                decoration:
-                const InputDecoration(labelText: 'Birim Fiyat (USD)'),
+                readOnly: selectedTypeName == 'Hisse' ||
+                    selectedTypeName == 'Kripto',
+                decoration: InputDecoration(
+                  labelText: selectedTypeName == 'Hisse'
+                      ? 'Birim Fiyat (TRY)'
+                      : selectedTypeName == 'Kripto'
+                      ? 'Birim Fiyat (USD)'
+                      : 'Birim Fiyat',
+                ),
                 keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
