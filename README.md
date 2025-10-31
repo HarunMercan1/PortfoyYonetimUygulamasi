@@ -1,4 +1,4 @@
-# 💼 Portföy Yönetim Sistemi v6.2
+# 💼 Portföy Yönetim Sistemi v6.5
 
 Bu proje, **Gazi Üniversitesi Bilgisayar Mühendisliği — Veritabanı Yönetim Sistemleri** dersi kapsamında geliştirilmiştir.  
 Kullanıcıların yatırım portföylerini **kişisel hesapları üzerinden güvenli bir şekilde yönetmesini** sağlayan bir uygulamadır.
