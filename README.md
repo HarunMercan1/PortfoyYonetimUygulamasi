@@ -4,7 +4,7 @@ Bu proje, **Gazi Üniversitesi Bilgisayar Mühendisliği — Veritabanı Yöneti
 Kullanıcıların yatırım portföylerini **kişisel hesapları üzerinden güvenli bir şekilde yönetmesini** sağlayan bir uygulamadır.
 
 Artık her kullanıcı, sadece **kendi varlıklarını** görebilir, ekleyebilir, silebilir ve düzenleyebilir.  
-JWT tabanlı kimlik doğrulama sayesinde tüm işlemler güvenli hale getirilmiştir. 🔐
+JWT tabanlı kimlik doğrulama sayesinde tüm işlemler güvenli hale getirilmiştir. 
 
 ---
 
