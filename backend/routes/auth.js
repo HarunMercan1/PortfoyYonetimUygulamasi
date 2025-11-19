@@ -13,9 +13,10 @@ router.post('/register', async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const inserted = await pool.query(
-      'INSERT INTO users (name, email, password) VALUES ($1,$2,$3) RETURNING id,name,email',
-      [name, email, hashed]
-    );
+  'INSERT INTO users (name, email, password, role) VALUES ($1,$2,$3,$4) RETURNING id,name,email,role',
+  [name, email, hashed, 'normal']
+);
+
 
     res.json({ message: 'Kayıt başarılı', user: inserted.rows[0] });
   } catch (err) {
@@ -37,7 +38,12 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: 'Geçersiz şifre' });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
+    const token = jwt.sign(
+  { id: user.id, email: user.email, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: '2h' }
+);
+
     res.json({ message: 'Giriş başarılı', token, user: { id: user.id, name: user.name, email: user.email } });
   } catch (err) {
     console.error('❌ Login hatası:', err.message);

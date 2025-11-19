@@ -9,16 +9,10 @@ class ApiService {
   static const baseUrl = 'http://10.0.2.2:3000/api';
   static const _storage = FlutterSecureStorage();
 
-  // 🔹 Token'ı oku ve header oluştur
-  static Future<Map<String, String>> _headers() async {
-    final token = await _storage.read(key: 'token');
-    return {
-      'Content-Type': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
-    };
-  }
+  // ------------------------------------------
+  // TOKEN & ROLE STORAGE
+  // ------------------------------------------
 
-  // 🔹 Token kaydet / oku / sil
   static Future<void> saveToken(String token) async {
     await _storage.write(key: 'token', value: token);
   }
@@ -27,122 +21,33 @@ class ApiService {
     return await _storage.read(key: 'token');
   }
 
+  static Future<void> saveRole(String role) async {
+    await _storage.write(key: 'role', value: role);
+  }
+
+  static Future<String?> getRole() async {
+    return await _storage.read(key: 'role');
+  }
+
   static Future<void> logout() async {
     await _storage.delete(key: 'token');
+    await _storage.delete(key: 'role');
   }
 
-  // --- TÜM VARLIKLARI GETİR ---
-  static Future<List<AssetModel>> getAssets() async {
-    final headers = await _headers();
-    final res = await http.get(Uri.parse('$baseUrl/assets'), headers: headers);
-
-    if (res.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(res.body);
-      return data.map((e) => AssetModel.fromJson(e)).toList();
-    } else if (res.statusCode == 401) {
-      throw Exception('Oturum süresi dolmuş, tekrar giriş yapınız.');
-    }
-    throw Exception('Veri çekme hatası: ${res.statusCode}');
+  // ------------------------------------------
+  // AUTH HEADERS
+  // ------------------------------------------
+  static Future<Map<String, String>> _headers() async {
+    final token = await _storage.read(key: 'token');
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
   }
 
-  // --- VARLIK TÜRLERİ GETİR ---
-  static Future<List<dynamic>> getAssetTypes() async {
-    final headers = await _headers();
-    final res = await http.get(Uri.parse('$baseUrl/types'), headers: headers);
-
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body);
-    }
-    throw Exception('Varlık türleri alınamadı (${res.statusCode})');
-  }
-
-  // --- PARA BİRİMLERİ GETİR ---
-  static Future<List<dynamic>> getCurrencies() async {
-    final headers = await _headers();
-    final res =
-    await http.get(Uri.parse('$baseUrl/currencies'), headers: headers);
-
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body);
-    }
-    throw Exception('Para birimleri alınamadı (${res.statusCode})');
-  }
-
-  static Future<List<dynamic>> getStocks() async {
-    final headers = await _headers();
-    final res = await http.get(Uri.parse('$baseUrl/stocks'), headers: headers);
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body);
-    } else {
-      throw Exception('Hisseler alınamadı (${res.statusCode})');
-    }
-  }
-
-  static Future<List<dynamic>> getCryptos() async {
-    final headers = await _headers();
-    final res = await http.get(Uri.parse('$baseUrl/cryptos'), headers: headers);
-    if (res.statusCode == 200) return jsonDecode(res.body);
-    throw Exception('Kripto listesi alınamadı');
-  }
-
-
-
-  // --- YENİ VARLIK EKLE ---
-  static Future<Map<String, dynamic>> addAsset(
-      Map<String, dynamic> asset) async {
-    final headers = await _headers();
-    final filteredAsset = Map.of(asset)..remove('user_id'); // 🔥 artık backend'de token'dan alınıyor
-
-    final res = await http.post(
-      Uri.parse('$baseUrl/assets'),
-      headers: headers,
-      body: jsonEncode(filteredAsset),
-    );
-
-    if (res.statusCode == 200 || res.statusCode == 201) {
-      return jsonDecode(res.body);
-    } else if (res.statusCode == 401) {
-      throw Exception('Yetkisiz erişim — lütfen tekrar giriş yapınız.');
-    } else {
-      throw Exception('Varlık eklenemedi (${res.statusCode})');
-    }
-  }
-
-  // --- VARLIK GÜNCELLE ---
-  static Future<Map<String, dynamic>> updateAsset(
-      Map<String, dynamic> asset) async {
-    final headers = await _headers();
-    final res = await http.put(
-      Uri.parse('$baseUrl/assets/${asset['id']}'),
-      headers: headers,
-      body: jsonEncode(asset),
-    );
-
-    if (res.statusCode == 200) {
-      return jsonDecode(res.body);
-    } else if (res.statusCode == 401) {
-      throw Exception('Yetkisiz işlem — oturum geçersiz.');
-    } else {
-      throw Exception('Varlık güncellenemedi (${res.statusCode})');
-    }
-  }
-
-  // --- VARLIK SİL ---
-  static Future<void> deleteAsset(int id) async {
-    final headers = await _headers();
-    final res =
-    await http.delete(Uri.parse('$baseUrl/assets/$id'), headers: headers);
-
-    if (res.statusCode == 200) {
-      return;
-    } else if (res.statusCode == 401) {
-      throw Exception('Yetkisiz işlem — tekrar giriş yapınız.');
-    } else {
-      throw Exception('Varlık silinemedi (${res.statusCode})');
-    }
-  }
-
-  // --- KULLANICI GİRİŞİ ---
+  // ------------------------------------------
+  // AUTH: LOGIN
+  // ------------------------------------------
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
     final res = await http.post(
@@ -154,9 +59,14 @@ class ApiService {
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
 
-      // ✅ TOKEN'I KAYDET
+      // TOKEN
       if (data['token'] != null) {
         await saveToken(data['token']);
+      }
+
+      // ROLE
+      if (data['user'] != null && data['user']['role'] != null) {
+        await saveRole(data['user']['role']);
       }
 
       return data;
@@ -165,8 +75,11 @@ class ApiService {
     }
   }
 
-  // --- KULLANICI KAYIT ---
-  static Future<Map<String, dynamic>> register(String name, String email, String password) async {
+  // ------------------------------------------
+  // AUTH: REGISTER
+  // ------------------------------------------
+  static Future<Map<String, dynamic>> register(
+      String name, String email, String password) async {
     final res = await http.post(
       Uri.parse('$baseUrl/auth/register'),
       headers: {'Content-Type': 'application/json'},
@@ -180,8 +93,120 @@ class ApiService {
     }
   }
 
+  // ------------------------------------------
+  // GET ASSETS
+  // ------------------------------------------
+  static Future<List<AssetModel>> getAssets() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/assets'), headers: headers);
+
+    if (res.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(res.body);
+      return data.map((e) => AssetModel.fromJson(e)).toList();
+    } else if (res.statusCode == 401) {
+      throw Exception('Oturum süresi dolmuş.');
+    }
+    throw Exception('Veri çekme hatası: ${res.statusCode}');
+  }
+
+  // ------------------------------------------
+  // GET TYPES / CURRENCIES / STOCKS / CRYPTOS
+  // ------------------------------------------
+  static Future<List<dynamic>> getAssetTypes() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/types'), headers: headers);
+
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Varlık türleri alınamadı (${res.statusCode})');
+  }
+
+  static Future<List<dynamic>> getCurrencies() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/currencies'), headers: headers);
+
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Para birimleri alınamadı (${res.statusCode})');
+  }
+
+  static Future<List<dynamic>> getStocks() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/stocks'), headers: headers);
+
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Hisseler alınamadı (${res.statusCode})');
+  }
+
+  static Future<List<dynamic>> getCryptos() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/cryptos'), headers: headers);
+
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Kripto verisi alınamadı');
+  }
+
+  // --- EMTİA GETİR ---
+  static Future<List<dynamic>> getCommodities() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/commodities'), headers: headers);
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    throw Exception('Emtialar alınamadı (${res.statusCode})');
+  }
 
 
+  // ------------------------------------------
+  // ADD ASSET
+  // ------------------------------------------
+  static Future<Map<String, dynamic>> addAsset(
+      Map<String, dynamic> asset) async {
+    final headers = await _headers();
+    final filteredAsset = Map.of(asset)..remove('user_id');
 
+    final res = await http.post(
+      Uri.parse('$baseUrl/assets'),
+      headers: headers,
+      body: jsonEncode(filteredAsset),
+    );
 
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return jsonDecode(res.body);
+    }
+    throw Exception('Varlık eklenemedi (${res.statusCode})');
+  }
+
+  // ------------------------------------------
+  // UPDATE ASSET
+  // ------------------------------------------
+  static Future<Map<String, dynamic>> updateAsset(
+      Map<String, dynamic> asset) async {
+    final headers = await _headers();
+
+    final res = await http.put(
+      Uri.parse('$baseUrl/assets/${asset['id']}'),
+      headers: headers,
+      body: jsonEncode(asset),
+    );
+
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Varlık güncellenemedi (${res.statusCode})');
+  }
+
+  // ------------------------------------------
+  // DELETE ASSET
+  // ------------------------------------------
+  static Future<void> deleteAsset(int id) async {
+    final headers = await _headers();
+
+    final res = await http.delete(
+      Uri.parse('$baseUrl/assets/$id'),
+      headers: headers,
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Varlık silinemedi (${res.statusCode})');
+    }
+  }
 }
+

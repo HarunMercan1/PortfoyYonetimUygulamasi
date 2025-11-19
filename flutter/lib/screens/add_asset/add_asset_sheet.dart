@@ -24,12 +24,22 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
   List<dynamic> _stocks = [];
   List<dynamic> _cryptos = [];
 
+  String? _userRole; // 🔥 Kullanıcı rolü (normal / premium)
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    _loadDropdownData();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await ApiService.getRole();
+    _userRole = role ?? 'normal';
+
+    // rol geldikten sonra dropdown verilerini yükle
+    await _loadDropdownData();
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadDropdownData() async {
@@ -39,17 +49,28 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
       final stocks = await ApiService.getStocks();
       final cryptos = await ApiService.getCryptos();
 
+      List<dynamic> filteredTypes = types;
+
+      // 🔥 NORMAL kullanıcı sadece Hisse + Altın görebilir
+      if (_userRole == 'normal') {
+        filteredTypes = types.where((t) {
+          final name = t['name'].toString().toLowerCase();
+          return name.contains('hisse') || name.contains('emtia');
+        }).toList();
+      }
+
       if (!mounted) return;
       setState(() {
-        _types = types;
+        _types = filteredTypes;
         _currencies = currencies;
         _stocks = stocks;
         _cryptos = cryptos;
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Veriler yüklenemedi: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Veriler yüklenemedi: $e')),
+      );
     }
   }
 
@@ -80,18 +101,20 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
       final result = await ApiService.addAsset(body);
 
       if (!mounted) return;
-      final msg = (result is Map && result['message'] != null)
-          ? result['message'].toString()
-          : 'Varlık eklendi ✅';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ?? 'Varlık eklendi ✅',
+          ),
+        ),
+      );
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.pop(context, true);
-      });
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Ekleme hatası: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ekleme hatası: $e')),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -100,6 +123,11 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
+    // 🔥 Rol yüklenirken ekran boş kalsın
+    if (_userRole == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     String? selectedTypeName;
     if (_selectedType != null) {
@@ -115,17 +143,21 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
           key: _formKey,
           child: Column(
             children: [
-              Text('Yeni Varlık Ekle',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                'Yeni Varlık Ekle',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 20),
 
+              // -------------------------------
               // 🔹 Varlık Türü
+              // -------------------------------
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Varlık Türü'),
                 value: _selectedType,
                 items: _types
-                    .map<DropdownMenuItem<String>>(
+                    .map(
                       (t) => DropdownMenuItem<String>(
                     value: t['id'].toString(),
                     child: Text(t['name'].toString()),
@@ -139,7 +171,6 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                     _nameController.clear();
                     _unitValueController.clear();
 
-                    // 💰 Para birimini otomatik belirle
                     final selectedTypeName = _types
                         .firstWhere((t) => t['id'].toString() == v)['name']
                         .toString();
@@ -159,24 +190,22 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                 },
                 validator: (v) => v == null ? 'Seçim zorunlu' : null,
               ),
-              const SizedBox(height: 10),
 
+              const SizedBox(height: 12),
+
+              // -------------------------------
               // 🔹 Hisse
+              // -------------------------------
               if (selectedTypeName == 'Hisse') ...[
                 DropdownButtonFormField<String>(
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Hisse Seç'),
                   value: _selectedSymbol,
                   items: _stocks
-                      .map<DropdownMenuItem<String>>(
+                      .map(
                         (s) => DropdownMenuItem<String>(
-                      value: s['symbol'].toString(),
-                      child: Text(
-                        '${s['symbol']} - ${s['name']}',
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
+                      value: s['symbol'],
+                      child: Text('${s['symbol']} - ${s['name']}'),
                     ),
                   )
                       .toList(),
@@ -184,33 +213,30 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                     setState(() {
                       _selectedSymbol = v;
                       final selected = _stocks.firstWhere(
-                              (s) => s['symbol'] == v,
-                          orElse: () => null);
+                            (s) => s['symbol'] == v,
+                        orElse: () => null,
+                      );
                       _unitValueController.text =
-                      (selected?['price_try']?.toString() ?? '');
+                          selected?['price_try']?.toString() ?? '';
                     });
                   },
                   validator: (v) => v == null ? 'Hisse seçimi zorunlu' : null,
                 ),
-                const SizedBox(height: 10),
               ]
 
+              // -------------------------------
               // 🔹 Kripto
+              // -------------------------------
               else if (selectedTypeName == 'Kripto') ...[
                 DropdownButtonFormField<String>(
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Kripto Seç'),
                   value: _selectedSymbol,
                   items: _cryptos
-                      .map<DropdownMenuItem<String>>(
+                      .map(
                         (c) => DropdownMenuItem<String>(
-                      value: c['symbol'].toString(),
-                      child: Text(
-                        '${c['symbol']} - ${c['name']}',
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
+                      value: c['symbol'],
+                      child: Text('${c['symbol']} - ${c['name']}'),
                     ),
                   )
                       .toList(),
@@ -218,46 +244,52 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                     setState(() {
                       _selectedSymbol = v;
                       final selected = _cryptos.firstWhere(
-                              (c) => c['symbol'] == v,
-                          orElse: () => null);
+                            (c) => c['symbol'] == v,
+                        orElse: () => null,
+                      );
                       _unitValueController.text =
-                      (selected?['price_usd']?.toString() ?? '');
+                          selected?['price_usd']?.toString() ?? '';
                     });
                   },
                   validator: (v) => v == null ? 'Kripto seçimi zorunlu' : null,
                 ),
-                const SizedBox(height: 10),
               ]
 
+              // -------------------------------
               // 🔹 Diğer türler
+              // -------------------------------
               else ...[
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(labelText: 'Varlık Adı'),
                     validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
                   ),
-                  const SizedBox(height: 10),
                 ],
 
+              const SizedBox(height: 12),
+
+              // -------------------------------
               // 🔹 Para Birimi
+              // -------------------------------
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Para Birimi'),
                 value: _selectedCurrency,
                 items: _currencies
-                    .map<DropdownMenuItem<String>>(
+                    .map(
                       (c) => DropdownMenuItem<String>(
                     value: c['id'].toString(),
-                    child: Text(c['code'].toString()),
+                    child:
+                    Text('${c['code']} (${c['name']})'),
                   ),
                 )
                     .toList(),
                 onChanged: (v) => setState(() => _selectedCurrency = v),
                 validator: (v) => v == null ? 'Seçim zorunlu' : null,
               ),
-              const SizedBox(height: 10),
 
-              // 🔹 Miktar
+              const SizedBox(height: 12),
+
               TextFormField(
                 controller: _amountController,
                 decoration: const InputDecoration(labelText: 'Miktar'),
@@ -265,13 +297,13 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                 const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
               ),
-              const SizedBox(height: 10),
 
-              // 🔹 Birim Fiyat
+              const SizedBox(height: 12),
+
               TextFormField(
                 controller: _unitValueController,
-                readOnly: selectedTypeName == 'Hisse' ||
-                    selectedTypeName == 'Kripto',
+                readOnly:
+                selectedTypeName == 'Hisse' || selectedTypeName == 'Kripto',
                 decoration: InputDecoration(
                   labelText: selectedTypeName == 'Hisse'
                       ? 'Birim Fiyat (TRY)'
@@ -283,6 +315,7 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                 const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => v!.isEmpty ? 'Bu alan zorunlu' : null,
               ),
+
               const SizedBox(height: 20),
 
               ElevatedButton.icon(
@@ -294,7 +327,8 @@ class _AddAssetSheetState extends State<AddAssetSheet> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
                     : const Icon(Icons.check_circle_rounded),
-                label: Text(_saving ? 'Kaydediliyor...' : 'Kaydet'),
+                label:
+                Text(_saving ? 'Kaydediliyor...' : 'Kaydet'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: cs.primary,
                   foregroundColor: cs.onPrimary,

@@ -11,7 +11,12 @@ function authMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // ✅ burada id varsa onu userId olarak ata
-    req.user = { userId: decoded.id, email: decoded.email };
+    req.user = {
+  userId: decoded.id,
+  email: decoded.email,
+  role: decoded.role
+};
+
 
     next();
   } catch (err) {
