@@ -1,20 +1,20 @@
-# 💼 Portföy Yönetim Sistemi v6.5
-  
+# 💼 Portföy Yönetim Sistemi v7.0 (Premium Destekli)
+
 Kullanıcıların yatırım portföylerini **kişisel hesapları üzerinden güvenli bir şekilde yönetmesini** sağlayan bir uygulamadır.
 
 Artık her kullanıcı, sadece **kendi varlıklarını** görebilir, ekleyebilir, silebilir ve düzenleyebilir.  
-JWT tabanlı kimlik doğrulama sayesinde tüm işlemler güvenli hale getirilmiştir. 
+JWT tabanlı kimlik doğrulama ve **premium/normal kullanıcı rolleri** sayesinde sistem daha güvenli ve esnek hale getirilmiştir.
 
 ---
 
 ## 🧱 Mimari Yapı
 
-| Katman               | Teknolojiler                                         |
-| :------------------- | :--------------------------------------------------- |
-| **Frontend (Mobil)** | Flutter (Material 3, http, fl_chart, secure_storage) |
-| **Backend (API)**    | Node.js + Express.js + JWT Authentication            |
-| **Veritabanı (DB)**  | PostgreSQL                                           |
-| **Araçlar**          | Postman, VSCode, Android Studio                      |
+| Katman               | Teknolojiler                                           |
+| :------------------- | :----------------------------------------------------- |
+| **Frontend (Mobil)** | Flutter (Material 3, http, fl_chart, secure_storage)   |
+| **Backend (API)**    | Node.js + Express.js + JWT + RBAC (Role-Based Control) |
+| **Veritabanı (DB)**  | PostgreSQL                                             |
+| **Araçlar**          | Postman, VSCode, Android Studio                        |
 
 ---
 
@@ -23,69 +23,103 @@ JWT tabanlı kimlik doğrulama sayesinde tüm işlemler güvenli hale getirilmi�
 Veritabanı ilişkisel olarak tasarlanmıştır ve **her varlık doğrudan bir kullanıcıya bağlıdır.**  
 Aşağıdaki tablolar foreign key bağlantıları ile birbirine bağlıdır:
 
-| Tablo            | Açıklama                                          |
-| :--------------- | :------------------------------------------------ |
-| **users**        | Kullanıcı bilgilerini ve kimlik bilgilerini tutar |
-| **asset_types**  | Varlık türlerini (Hisse, Kripto, Emtia vb.) tutar |
-| **currencies**   | Para birimlerini (TRY, USD, EUR vb.) tutar        |
-| **assets**       | Her kullanıcının varlık kayıtlarını saklar        |
-| **transactions** | (Hazırlıkta) Varlık alım-satım geçmişini tutacak  |
+| Tablo           | Açıklama                                              |
+| :-------------- | :---------------------------------------------------- |
+| **users**       | Kullanıcı bilgileri + kullanıcı rolü (normal/premium) |
+| **asset_types** | Varlık türleri (Hisse, Kripto, Emtia, Fon, Tahvil…)   |
+| **currencies**  | Para birimleri (TRY, USD, EUR vb.)                    |
+| **assets**      | Kullanıcıya ait varlık kayıtları                      |
+| **stocks**      | BIST hisseleri                                        |
+| **cryptos**     | Kripto listesi                                        |
+| **commodities** | Emtialar                                              |
+| **funds**       | Fon listesi                                           |
+| **bonds**       | Tahvil listesi                                        |
+| **forex**       | Döviz verileri                                        |
 
-> 💡 Artık sistem **çoklu kullanıcı** desteğine sahiptir; her kullanıcı sadece kendi portföyünü görür.
+> 💡 Sistem **çoklu kullanıcı** desteklidir; her kullanıcı sadece kendi portföyünü görür.
+
+---
+
+## 🔐 Kullanıcı Rolleri
+
+### 👤 Normal Kullanıcı
+
+- Sadece **Hisse + Emtia** ekleyebilir
+- Diğer türleri görebilir ama ekleyemez
+
+### ⭐ Premium Kullanıcı
+
+- Tüm varlık türlerini ekleyebilir:
+  - Hisse
+  - Kripto
+  - Emtia
+  - Fon
+  - Tahvil
+  - Döviz
 
 ---
 
 ## ⚙️ Backend Özellikleri
 
-- 🔹 Express.js tabanlı RESTful API
-- 🔹 PostgreSQL bağlantısı (pg Pool)
-- 🔹 JWT tabanlı **kimlik doğrulama** (login / register / token doğrulama)
-- 🔹 CRUD işlemleri:
-  - **GET** → Giriş yapan kullanıcıya ait varlıkları getirir
-  - **POST** → Yeni varlık ekleme (token’dan user_id alınır)
-  - **PUT** → Varlık düzenleme
-  - **DELETE** → Varlık silme
-- 🔹 Her API isteğinde token doğrulama (`authMiddleware`)
-- 🔹 `req.user.userId` üzerinden kullanıcıya özel sorgular
-- 🔹 Gelişmiş hata yakalama ve loglama sistemi
+- Express.js tabanlı RESTful API
+- PostgreSQL bağlantısı (pg Pool)
+- JWT tabanlı kimlik doğrulama (Login/Register)
+- BCrypt ile güvenli şifre hashleme
+- Rol bazlı yetkilendirme (RBAC)
+- CRUD işlemleri:
+  - GET → Kullanıcıya ait varlıkları getirir
+  - POST → Rol kontrolü ile yeni varlık ekleme
+  - PUT → Varlık düzenleme
+  - DELETE → Varlık silme
+- Dropdown verileri için özel endpointler:
+  - /stocks
+  - /cryptos
+  - /commodities
+  - /funds
+  - /bonds
+  - /forex
 
 ---
 
-## 📱 Frontend Özellikleri (v6.0)
+## 📱 Frontend Özellikleri (v7.0)
 
-- 🎨 Flutter (Material 3, dark/light theme desteği)
-- 🔐 **Kullanıcı Girişi ve Oturum Yönetimi**
-  - Login işlemi sonrası alınan JWT token **Flutter Secure Storage**’da saklanır
-  - Her API isteğinde `Authorization: Bearer <token>` header’ı otomatik eklenir
-  - Logout ile token güvenli şekilde silinir
-- 🧩 CRUD İşlemleri
-  - “Yeni Varlık Ekle” → modal bottom sheet üzerinden
-  - “Düzenle” → **EditAssetSheet** üzerinden inline form
-  - “Sil” → onay dialog ile
-- 📊 **Modern Pie Chart**
-  - Dilim içinde tür adı + yüzde oranı
-  - Dokunulduğunda merkezde detay bilgisi (oran + toplam ₺)
-  - Smooth animasyonlar ve modern renk paleti
-- 🔄 Gerçek zamanlı yenileme (ekleme/düzenleme sonrası otomatik)
-- 💬 Snackbar ile işlem geri bildirimleri
-- 💡 Responsive ve sade arayüz
+- 🎨 Flutter (Material 3)
+- 🔐 JWT token yönetimi (secure_storage)
+- 🔁 Tüm isteklerde otomatik Authorization header
+- 🧩 CRUD işlemleri:
+  - Yeni varlık ekleme (dinamik bottom sheet)
+  - Düzenleme (EditAssetSheet)
+  - Silme (dialog onay)
+- 🧠 Rol bazlı UI:
+  - Normal kullanıcı → sadece Hisse + Emtia dropdown gösterilir
+  - Premium kullanıcı → tüm varlık türleri aktif
+- 📊 Modern Pie Chart (FL Chart)
+- 🔄 Ekleme / düzenleme sonrası ekran otomatik güncellenir
+- 💬 Snackbar bildirimleri
+- 📱 Responsive arayüz
 
 ---
 
-## 🚀 Yeni Eklenenler (v6.0 Güncellemesi)
+## 🚀 Yeni Eklenenler (v7.0 Güncellemesi)
 
-| Özellik                        | Açıklama                                                           |
-| :----------------------------- | :----------------------------------------------------------------- |
-| 🔐 **JWT Authentication**      | Giriş yapan kullanıcıya özel token sistemi eklendi                 |
-| 👤 **Kullanıcı Bazlı Portföy** | Her kullanıcı sadece kendi varlıklarını görebiliyor                |
-| 🔑 **Secure Token Storage**    | Flutter Secure Storage ile token güvenli şekilde saklanıyor        |
-| 🔁 **Header Entegrasyonu**     | Her istek otomatik olarak `Authorization` header’ı içeriyor        |
-| 🧩 **Auth Middleware**         | Backend tarafında token doğrulama zorunlu hale getirildi           |
-| 🧱 **Kod Refaktörü**           | assets.js, auth.js ve api_service.dart yapısı yeniden düzenlendi   |
-| ⚙️ **Logout Özelliği**         | Kullanıcı çıkışı artık token’ı temizliyor ve Login’e yönlendiriyor |
-| 🧠 **Tam Senkronizasyon**      | Flutter ↔ Node.js ↔ PostgreSQL arasında kullanıcı bazlı veri akışı |
+| Özellik                            | Açıklama                                            |
+| :--------------------------------- | :-------------------------------------------------- |
+| ⭐ Premium / Normal roller         | Kullanıcı girişinde rol kontrolü                    |
+| 📊 Yeni varlık türleri             | Fon, Tahvil, Döviz entegre edildi                   |
+| 🔄 Dinamik dropdown                | Her tür için veriler backend’den yükleniyor         |
+| 🔐 Rol tabanlı varlık sınırlaması  | Normal kullanıcı sadece Hisse + Emtia ekleyebiliyor |
+| 🧱 AddAssetSheet tamamen yenilendi | Kod yapısı düzenlendi, hata yönetimi iyileştirildi  |
+| 🗄️ Yeni tablolar                   | funds, bonds, forex tabloları eklendi               |
 
 ---
+
+## 📸 Ekran Görüntüleri (v7.0)
+
+> Yeni ekran görüntüleri eklendikten sonra güncellenecek.
+
+---
+
+## 🧩 Klasör Yapısı
 
 ## 📸 Ekran Görüntüleri (v6.0)
 
