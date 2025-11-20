@@ -152,9 +152,29 @@ class ApiService {
     if (res.statusCode == 200) {
       return jsonDecode(res.body);
     }
-    throw Exception('Emtialar alınamadı (${res.statusCode})');
+    throw Exception('Emtia listesi alınamadı (${res.statusCode})');
   }
 
+  static Future<List<dynamic>> getBonds() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/bonds'), headers: headers);
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Tahvil listesi alınamadı');
+  }
+
+  static Future<List<dynamic>> getFunds() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/funds'), headers: headers);
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Fon listesi alınamadı');
+  }
+
+  static Future<List<dynamic>> getForex() async {
+    final headers = await _headers();
+    final res = await http.get(Uri.parse('$baseUrl/forex'), headers: headers);
+    if (res.statusCode == 200) return jsonDecode(res.body);
+    throw Exception('Döviz listesi alınamadı');
+  }
 
   // ------------------------------------------
   // ADD ASSET

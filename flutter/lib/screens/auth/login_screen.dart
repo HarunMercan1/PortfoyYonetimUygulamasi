@@ -14,31 +14,40 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   bool _loading = false;
 
   Future<void> _login() async {
     setState(() => _loading = true);
+
     try {
       final res = await ApiService.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
-      // token kaydet
-      await _storage.write(key: 'token', value: res['token']);
+      // 🔥 Login cevabından hem TOKEN hem ROLE alıyoruz
+      final token = res['token'];
+      final role = res['user']['role'] ?? 'normal';
+
+      // 🔐 storage’a yaz
+      await _storage.write(key: 'token', value: token);
+      await _storage.write(key: 'role', value: role);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Giriş başarılı ✅')));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Giris basarili ✅')),
+      );
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainPage()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Giriş hatası: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Giris hatasi: $e')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -58,24 +67,27 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Portföy Yönetimi',
+                  'Portfoy Yonetimi',
                   style: Theme.of(context)
                       .textTheme
                       .headlineMedium
                       ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
+
                 TextField(
                   controller: _emailController,
                   decoration: const InputDecoration(labelText: 'E-posta'),
                 ),
                 const SizedBox(height: 16),
+
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Şifre'),
+                  decoration: const InputDecoration(labelText: 'Sifre'),
                 ),
                 const SizedBox(height: 30),
+
                 ElevatedButton.icon(
                   onPressed: _loading ? null : _login,
                   icon: _loading
@@ -85,13 +97,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                       : const Icon(Icons.login),
-                  label: Text(_loading ? 'Giriş yapılıyor...' : 'Giriş Yap'),
+                  label: Text(_loading ? 'Giris yapiliyor...' : 'Giris Yap'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cs.primary,
                     foregroundColor: cs.onPrimary,
                     minimumSize: const Size(double.infinity, 48),
                   ),
                 ),
+
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -99,9 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     );
                   },
-                  child: const Text('Hesabın yok mu? Kayıt Ol'),
-                )
-
+                  child: const Text('Hesabin yok mu? Kayit Ol'),
+                ),
               ],
             ),
           ),

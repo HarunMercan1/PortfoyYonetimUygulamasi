@@ -17,6 +17,10 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/stocks", require("./routes/stocks"));
 app.use("/api/cryptos", require("./routes/cryptos"));
 app.use("/api/commodities", require("./routes/commodities"));
+app.use("/api/bonds", require("./routes/bonds"));
+app.use("/api/funds", require("./routes/funds"));
+app.use("/api/forex", require("./routes/forex"));
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server ${PORT} portunda calisiyor...`));

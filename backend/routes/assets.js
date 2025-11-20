@@ -55,25 +55,26 @@ router.post("/", async (req, res) => {
     // -----------------------------
     // 🔥 NORMAL KULLANICIYA KISITLAMA
     // -----------------------------
-    if (userRole === 'normal') {
-      const type = await pool.query(
-        "SELECT name FROM asset_types WHERE id=$1",
-        [type_id]
-      );
+    // normal kullanıcı sadece HISSE + EMTIA ekleyebilir
+if (userRole === 'normal') {
+  const type = await pool.query(
+    "SELECT name FROM asset_types WHERE id=$1",
+    [type_id]
+  );
 
-      if (type.rows.length === 0) {
-        return res.status(400).json({ message: "Geçersiz varlık türü" });
-      }
+  if (type.rows.length === 0) {
+    return res.status(400).json({ message: "Geçersiz varlık türü" });
+  }
 
-      const typeName = type.rows[0].name.toLowerCase();
+  const typeName = type.rows[0].name.toLowerCase();
 
-      // normal kullanıcı sadece hisse + altın
-      if (!(typeName.includes("hisse") || typeName.includes("altın"))) {
-        return res.status(403).json({
-          message: "Normal kullanıcı bu varlık türünü ekleyemez (premium gerekli)."
-        });
-      }
-    }
+  if (!(typeName.includes("hisse") || typeName.includes("emtia"))) {
+    return res.status(403).json({
+      message: "Normal kullanıcı bu varlık türünü ekleyemez (premium gerekli)."
+    });
+  }
+}
+
 
     // -----------------------------
     // MEVCUT VARLIK VARSA GÜNCELLE
