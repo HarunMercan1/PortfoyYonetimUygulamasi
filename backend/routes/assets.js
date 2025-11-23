@@ -185,4 +185,22 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// TOPLAM PORTFÖY DEĞERİ (Stored Procedure)
+router.get("/total/value", async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const result = await pool.query(
+      "SELECT get_user_portfolio_value($1) AS total",
+      [userId]
+    );
+
+    res.json({ total: result.rows[0].total });
+  } catch (err) {
+    console.error("❌ GET /assets/total/value:", err.message);
+    res.status(500).json({ message: "Portföy değeri alınamadı" });
+  }
+});
+
+
 module.exports = router;

@@ -6,7 +6,6 @@ import 'widgets/summary_card.dart';
 import 'widgets/asset_card.dart';
 import '../edit_asset/edit_asset_sheet.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,6 +16,8 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   List<AssetModel> assets = [];
   bool loading = true;
+
+  double totalPortfolioValue = 0; // 🔥 SP'den gelen toplam değer
 
   @override
   void initState() {
@@ -29,10 +30,16 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() => loading = true);
 
     try {
+      // Varlıkları çek
       final data = await ApiService.getAssets();
+
+      // Stored Procedure → toplam değer
+      final total = await ApiService.getTotalPortfolioValue();
+
       if (!mounted) return;
       setState(() {
         assets = data;
+        totalPortfolioValue = total;
         loading = false;
       });
     } catch (e) {
@@ -42,14 +49,6 @@ class HomeScreenState extends State<HomeScreen> {
         SnackBar(content: Text('Veri çekme hatası: $e')),
       );
     }
-  }
-
-  double get totalValue {
-    double sum = 0;
-    for (var a in assets) {
-      sum += a.totalValue;
-    }
-    return sum;
   }
 
   @override
@@ -78,7 +77,7 @@ class HomeScreenState extends State<HomeScreen> {
                   children: [
                     SummaryCard(
                       title: 'Toplam Değer',
-                      value: totalValue.toStringAsFixed(2),
+                      value: totalPortfolioValue.toStringAsFixed(2),
                       icon: Icons.savings_rounded,
                       gradientColors: [cs.primary, cs.tertiary],
                     ),
@@ -139,14 +138,14 @@ class HomeScreenState extends State<HomeScreen> {
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content:
-                                  Text('Silme hatası: $e')),
+                                  content: Text('Silme hatası: $e')),
                             );
                           }
                         }
                       },
                       onEdit: () async {
-                        final result = await showModalBottomSheet<bool>(
+                        final result =
+                        await showModalBottomSheet<bool>(
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -154,25 +153,28 @@ class HomeScreenState extends State<HomeScreen> {
                             heightFactor: 0.9,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                color:
+                                Theme.of(context).colorScheme.surface,
+                                borderRadius:
+                                const BorderRadius.vertical(
+                                    top: Radius.circular(24)),
                               ),
-                              child: EditAssetSheet(asset: asset), // 🔥 Düzenleme sayfası
+                              child: EditAssetSheet(asset: asset),
                             ),
                           ),
                         );
 
-                        // Güncellendiyse listeyi yenile
                         if (result == true) {
                           await fetchAssets();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Varlık güncellendi ✅')),
+                              const SnackBar(
+                                  content:
+                                  Text('Varlık güncellendi ✅')),
                             );
                           }
                         }
                       },
-
                     );
                   },
                 ),

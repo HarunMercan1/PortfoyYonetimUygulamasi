@@ -6,7 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../models/asset_model.dart';
 
 class ApiService {
-  static const baseUrl = 'http://10.0.2.2:3000/api';
+  // Hem emülatör hem de gerçek cihaz için artık bunu kullanabilirsin:
+  static const baseUrl = 'http://127.0.0.1:3000/api';
   static const _storage = FlutterSecureStorage();
 
   // ------------------------------------------
@@ -228,5 +229,22 @@ class ApiService {
       throw Exception('Varlık silinemedi (${res.statusCode})');
     }
   }
+
+  static Future<double> getTotalPortfolioValue() async {
+    final headers = await _headers();
+    final res = await http.get(
+      Uri.parse('$baseUrl/assets/total/value'),
+      headers: headers,
+    );
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return double.tryParse(data['total'].toString()) ?? 0;
+    } else {
+      throw Exception('Toplam değer alınamadı');
+    }
+  }
+
 }
+
 
